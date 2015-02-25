@@ -74,7 +74,15 @@ transition: all 0.25s;
 <div style='display: inline-block; width: 1.4em;'></div><div class='key' id='90'>Z</div><div class='key' id='88'>X</div><div class='key' id='67'>C</div><div class='key' id='86'>V</div><div class='key' id='66'>B</div><div class='key' id='78'>N</div><div class='key' id='77'>M</div>
 </div>
 </body>
-<script> 
+<script>
+    if(!localStorage.savedDict){
+        var xhr = new XMLttpRequest();
+        xhr.open('GET', 'pocket.txt');
+        xhr.send();
+        xhr.addEventListener("load", function(){
+            localStorage.savedDict = JSON.stringify(xhr.responseText.split('\n'));
+        });  
+    } 
   var health = 100;
   var totalScore = 0;
   var currentWordValue;
