@@ -1,32 +1,84 @@
-<html>
-<head>
-<style>
-#currentword {
-background-color: #FFF;
+<html><head><style>
+
+    #currentword {
+        background-color: #FFF;
+    }
+    body {
+        font-family: 'Courier New';
+        background-color: #777;
+    }
+    .key {
+        background-color: #000;
+        color: #FFF;
+        width: 1.4em;
+        height: 1.1em;
+        border: 2px outset #FFF;
+        border-radius: 0.2em;
+        display: inline-block;
+        text-align: center;
+    }
+    #keyboard {
+        position: absolute;
+        bottom: 1em;
+        width: 96%;
+        background: black;
+        border-bottom: 1em solid white;
+        border-bottom-left-radius: 1em;
+        border-bottom-right-radius: 1em;
+    }
+
+    #currentword {
+        border: 10px solid #000;
+    }
+
+#currentword-wrong {
+border: 10px solid red;
+transition: all 0.25s;
 }
-body {
-background-color: #777;
+
+#hpbar {
+    background-color: red;
+    border-top: 1em outset yellow;
+    border-bottom: 1em outset yellow;
+    border-left: 0.5em outset yellow;
+    border-right: 0.5em outset yellow;
 }
-.key {
-background-color: #000;
-color: #FFF;
-width: 5em;
-border: 1px solid #FFF;
-display: inline-block;
-text-align: center;
+
+#hpframe {
+    width: 100%;    
 }
+
+.shakes{
+    animation:shake 0.04s; 
+    animation-direction: alternate;
+    animation-iteration-count: 6;
+}
+
+@keyframes shake { 
+  0% { bottom: 0em } 
+  100% { bottom: 1em } 
+} 
+
 </style>
 </head>
-<body>
+<body onload='init()'>
 <audio id='output'></audio>
 <div id='currentword'></div>
+<div id='hpframe'>
+    <div id='hpbar'></div>
+</div>
+<div id='scoreBoard'></div>
 <div id='keyboard'>
 <div class='key' id='81'>Q</div><div class='key' id='87'>W</div><div class='key' id='69'>E</div><div class='key' id='82'>R</div><div class='key' id='84'>T</div><div class='key' id='89'>Y</div><div class='key' id='85'>U</div><div class='key' id='73'>I</div><div class='key' id='79'>O</div><div class='key' id='80'>P</div><br>
-<div style='display: inline-block; width: 2.5em;'></div><div class='key' id='65'>A</div><div class='key' id='83'>S</div><div class='key' id='68'>D</div><div class='key' id='70'>F</div><div class='key' id='71'>G</div><div class='key' id='72'>H</div><div class='key' id='74'>J</div><div class='key' id='75'>K</div><div class='key' id='76'>L</div><br>
-<div style='display: inline-block; width: 5em;'></div><div class='key' id='90'>Z</div><div class='key' id='88'>X</div><div class='key' id='67'>C</div><div class='key' id='86'>V</div><div class='key' id='66'>B</div><div class='key' id='78'>N</div><div class='key' id='77'>M</div>
+<div style='display: inline-block; width: 0.7em;'></div><div class='key' id='65'>A</div><div class='key' id='83'>S</div><div class='key' id='68'>D</div><div class='key' id='70'>F</div><div class='key' id='71'>G</div><div class='key' id='72'>H</div><div class='key' id='74'>J</div><div class='key' id='75'>K</div><div class='key' id='76'>L</div><br>
+<div style='display: inline-block; width: 1.4em;'></div><div class='key' id='90'>Z</div><div class='key' id='88'>X</div><div class='key' id='67'>C</div><div class='key' id='86'>V</div><div class='key' id='66'>B</div><div class='key' id='78'>N</div><div class='key' id='77'>M</div>
 </div>
 </body>
 <script> 
+  var health = 100;
+  var totalScore = 0;
+  var currentWordValue;
+  var currentWordMistake = false;
   var dict = [];
   if(localStorage.savedDict) dict = JSON.parse(localStorage.savedDict);
   var channeli = 0;
@@ -44,11 +96,17 @@ text-align: center;
           if(channeli >= tapChannels.length) channeli = 0; 
           document.getElementById('' + chari).style.backgroundColor = 'gray';
           chari++;
-          if(chari == charlength){
+          if(chari == charlength){ //word cleared!
+              point.play();
+              totalScore += currentWordValue;
+              document.getElementById('scoreBoard').innerHTML = '' + totalScore;
               fillWord(randWord());
           }
       }
-      else {
+      else { //WRONG KEY PRESS
+          currentWordMistake ? damage(1) : damage(5);
+          currentWordMistake = true;
+          currentWordValue = Math.ceil(currentWordValue/2);
           hurtChannels[hurtChanneli++].play();
           if(hurtChanneli >= hurtChannels.length) hurtChanneli = 0;
           for(var i = chari; i >= 0; --i){
@@ -60,7 +118,7 @@ text-align: center;
   for(var i = 0; i < 20; ++i){
       var char = document.createElement('span');
       char.id = "" + i;
-      char.innerHTML = '_';
+      char.innerHTML = '';
       var cw = document.getElementById('currentword');
       cw.appendChild(char);
   }
@@ -68,39 +126,69 @@ text-align: center;
       chari = 0;
       for(var i = 0; i < 20; ++i){
           document.getElementById(i).style.backgroundColor = 'white';
-          document.getElementById(i).innerHTML = '_';
+          document.getElementById(i).innerHTML = '';
       }
   }
   var fillWord = function(string){
       clearWord();
+      currentWordMistake = false;
+      currentWordValue = string.length;
       for(var i = 0; i < string.length; ++i){
           document.getElementById('' + i).innerHTML = string[i];
       }
       charlength = string.length;
   }
-  fillWord("Hello");
   var getColor = function() {
   return 'rgb(' + Math.floor(Math.random()*255) + ',' + Math.floor(Math.random()*255) + ',' + Math.floor(Math.random()*255) + ')';
   };
+  var damage = function(damagepoints){
+      shake();
+      changeColor(kb, 'black', 'red', 240);
+      if(health - damagepoints >= 0){
+          health = health - damagepoints;
+          document.getElementById('hpbar').style.width = health + '%';
+      } else {
+          alert('YOU ARE DEAD.');
+      }
+  }
   document.body.onkeydown = function(event) {
       if(event.keyCode < 65 || event.keyCode > 90) return;
       var thispress = document.getElementById(''+event.keyCode);
       checkChar(thispress.innerHTML);
       var keynum = "" + event.keyCode;
       var thekey = document.getElementById(keynum);
-      var randColor = getColor();
-      thekey.style.backgroundColor = randColor;
-      thekey.style.color = 'black';
-      document.body.style.backgroundColor = randColor;
+      //var randColor = getColor();
+      //thekey.style.backgroundColor = randColor;
+      //thekey.style.color = 'black';
+      //document.getElementById('keyboard').style.backgroundColor = randColor;
+      thispress.style.borderStyle = 'inset';
   }
   document.body.onkeyup = function(event) {
       if(event.keyCode < 65 || event.keyCode > 90) return;
       var keynum = "" + event.keyCode;
       var thekey = document.getElementById(keynum);
-      thekey.style.backgroundColor = 'black';
-      thekey.style.color = 'white';
-      document.body.style.backgroundColor = '#000';
+      //thekey.style.backgroundColor = 'black';
+      //thekey.style.color = 'white';
+      //document.getElementById('keyboard').style.backgroundColor = '#000';
+      thekey.style.borderStyle = 'outset';
   }
+  var kb = document.getElementById('keyboard');
+    function init() { 
+        var shaker = document.getElementById("keyboard"); 
+        shaker.addEventListener("animationend", function(){ 
+            shaker.classList.remove("shakes") 
+        }, false);  
+    } 
+function shake() { 
+  var shaker = document.getElementById("keyboard"); 
+  shaker.classList.add("shakes"); 
+} 
+    function changeColor(elm, col0, col1, time){
+        elm.style.backgroundColor = col1;
+        setTimeout(function(){
+            elm.style.backgroundColor = col0;
+        }, time);
+    }
   var audioHeader = 'data:audio/wav;base64,';
   var sounds = [];
   sounds['tap'] = 'UklGRigRAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQQRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAwABgADAAsBGv4GAtv+6wELAR3/AQAFARP9BwTx/esCBf4LAgn+/QL1/uwC8P4EAQUA/QD6AAEABQD/AP0B//4CAgP/AQH///wBAP4HAw/9/QPx/fACAf//Afr//gER/xYBBgDp/+MB+wAP/wsCAP0FA//99wL5/wYBCP/4Afj//QAGAQf/+wHxAPL/+QAAAQL/HQIh/QcD3/z0BR37GgX7/OwCCwAO/ggDAP3/A/n+8AHy//AA8wH4//oB/P/8AAEABQAFAPsA+QD//wcBD/8NAQb/9AHv//cBCP8MAQj/BAH6//cB/v8AAff/7gEE/xkAGwEA/uwE9/sUBRD7+QTp/fsDCP0EAgH//gABAAYAAgD/AAAA/wAAAP8BAP7+AgD+/gIA//wA+QH4//8ADQAUAAUA7wDlAfr+DQIG/u4B6wAA/wgCD/4IAvj95wPs/ggBBgD8//oBB/8IAf//+QH8//8A/wEA//wB+f73AwL9EAQY/AMC6wDq//0CDP4DAgP9AwMF/fYD+P4CAQP+/AP7/QQDB/4FAAMB9v/0AP0BBP8AAPwBA/8CAQD+/AME/AYFAvz+Av7//gD9Af//AAEB/v0C/f//AAIBAv/+AP0B/v7/AgMAAf4BAwb9CwEHAvv98AL4AAT9BQUA/AACCwAD//UA8QH9/gwDEP0DAvL+8AID/gcBAgD7AAUACgAE//sC+P76AgH+AAH/AAAAAgAD/wICBP79Avr+/QEAAAAAAAAOAQ7+/ALj/u0CCAAM//0A+AEK/v8D+P76/w0DCv32AvP/9wADAAsBGP8OAfX/6QH+/xUB+gDy//0BEAAF//QB8//5AQAA/v75A/X88ATx/gAADgEM//sA8AHz/wAB/v/yAfb/DwEe/wgA5wHh//0AEAABAej++AMM/Q4C/QDq/+0ACQEF//wB/AAV/v8C4P/sARP/HgH3/v0DDfwOBev76AQC/goAAwD7AQb+AQP//QACCv8LAAQC/P32AgD/FQEg/wsB6f7kAgD/GgH//+oA9QAYARP+8wPb/fwCGP8Q//oC/f4IAvH+7wL9/QoECvwHBAz87gPs/gEBFgAIAPP//QEE/wQBAAD6APv//gEA//sC+v/9APwA9v/xAvX/+gD/AAAA/AD4APIBBP0SBA386QPb//EAC/8NAgD+BQL5/usB8QAHAA7/+gH9AAD//gL6/AEED/4SAAIC7P3gAwD+FAAMAgn+AQH7APD//wIM/vsB+P/+AQsAAgD4//UB+v/9Af8BAP0FAwj9AgP0/vICAP4HAf8A8gD4/wMCDv8LAPcA6gDw/wgCB/71Avv/BwANAP8A9wD5AQL+BQIA/vYC/f8IAQ7+AQL0//MAAQIE/f0D9/4BAQQA/wD9AAIABQAAAfn+9wIA/gMCDP8NAAQA7wDsAAgACwEA/vQDCvwKBPf85gX6+xUEFfzzBOD98AIF/wAA7gH6/wkBEf8CAfv++wQF/AQCAwAD/wUC/v7yAff//wIE//n/+QIB/QgEC/wBA/b+8wECAAr/+wH//wwCGP0FBO/76AUD/AgD/f7zAQUADv/zAuv+8gEFAAL//gIA/v8C+P3zA//+AwIJ/gsBBf/4AfQBAv4CAQMAC/4TBQr67QX3/AUDCv74Aff/AAEF//4C+Pz4BP39/wIB/wkADAACAer/7wED/goD/f30Av8ABf79AvT/+/8GAgv+AQH7APsA/wAP/wsC+P3sBPr8CQP9/vYCAf4VAgL+7ALu/g8CD/72AvP+AwIP/fsE8/33AQUAAgAC/wYCDf7/AfIA+P8DAREAE/4MA/z97QMF/QwDA/z0Bfz7BQT//foC9//1AP8BBP4BAvv//AAEAAYBAf74AvX/AQAHAQL/+gH+/wQBAv//AQAA///+Af3//AD+Agf9CgIC//IA7wD+AQf/BgEA/wIA/QD2Af7/AQEB//kBA/8HAQD+/AMA/QQD/v75APoB///+AQT/CgEA//EB7gAC/wQB/P/7AQb/CQL+/f0DAv0FAwL++wL5/fcD/v4EAQkABf/6AfT//AAFAQX//gD9Af/++wL+/v4C/P77A/79/QH1AfX+/wIN/woA/gH0//sABQEF//wB/f8CAAMBAf//AQP/AAAAAQD+/wL+//wBAf8FAQP+9wP2/fsDBv0GAwf9BAL8//cB/f4PAgv++wL3/gICCP7+Af0BAP4GAQcBAP72AvMA/P4CAgD+AQIE/wAA8gD1AAIACAADAPoA+QD6Af/+AQL+//sA/QEC//4BAf8KARL+AwPu/fUDCP4OAPYA9wAJABQBBv/yAO4AAAAJAAAB8v74Agb/AgD/Af3+AAID//8A+wD+AQL/AwACAAL//wP7/P4EAvwAA/z+/AEBAAD/AQECAAD/+gH6//8BB/8JAQT+9QLz//wBDf8HAP0B+v78AwH+AgAAAgH9AgIDAP3/+AH8AP7+AwMJ/g0B/wDt//QABgEM//gCBv4NAQP/8AH2AAj//gL5/vsCCP8A//YC9/4AAgb/AQD/AP0A/AH8//0A/wD+AQH+AQP//PgD+/8AAAAA/gD8//sB/gACAAUA/gD5//oCBv4EAv7+/QMF/AMD+P75AQABBf39A/r9/gIJAAj+/wP4/fsBAAH//vwDAv0JAgv++gLx//kBBv8DAPcB//8DAAEB+P73A/3+AQD9Afv/AgEO/wcB9v7zBAH7CQT8/vkAAAEI/gMC/v/8Avz9/QIA//4A/gL6/vIA+gEB/wEB/AD7//4A+gH4//cB+QD+/wYADwD8AfD/9AEK/gcC+P71Av7/BgAGAAgAAQH3/vsDAvwABPj++f8BAwj8AgT2/ewBAQEJ/gAC9f76Agb+/wP+/fsC/P7+AgD//wEC/gICA///AAABAP7/AgD/AAACAP8B+P72AgD+CQEJAfz+8AL4/g0BCwEC/vwC//74AvX+AwEBAfz9/AUE+QEG+f33Af0ABP8CAQYAA//5AfAA+f8NAgX9+QP3/gABAAD9AAL/BgID/fgD+f/+/wQC/f38AwP+BQIB/foD+/0AAwT+/gH5//oBAv8AAQT/BgEG//oB+P/+AQP//AH4/wIBCv8FAfj/9wEC/woBAv/9AQQABv/9Aff//gACAgP9AQMH/gH/9wP2/f8DCP39A/39/gICAAD+/QQA+wAEAv4CAQAA///+AQEAAP//AgD+/wH+AP0AAf8IAQr/+wHxAfX8BgQC/fgD+P4EAAUB+v7zA/b8/wQI/QgCAv/5APsAAgAGAf//+wD+AQT+AQMA/AAEBPz/BPj9+AIC/wf//QP+/AAEA/3+Avz//AAAAAEA/wH+/v8CAP78Av3+/wEDAQH+/gL+//7/AQMD/AEE/P35Af4BAf7+A/38AwQG/AAE+Pz8BAT9AgL8//wABwEM/wUB+gDw//wBB//9AfcA/gAO/wIB9f/xAgX9BQT9+/YFBPwJAv0B+f37BAT8AgMJ/gkB/AHz/voCEf4HAfwA+gAE/wED+vv9BgD6AQUB/v3/+gP7+/8FBf4E//wC+f77AQUAAgD+//8BBQACAPsA+gD+/wMCBf4AAvz++QIB/wMA/wD8AP0AAQH+/v0D/vz7Bfz7/QQC/QQBAwL9/fUD/f0FAgX//wH8//0AAAEC/wIAAwED/v8B+gH9/gEDAf39Af8BBf4EAgP//gD6Af3+AQMD/P8EAf0EAf8B+/77AgP+AQL9/vwBBP8GAgH+9gL4/gABBAD/APoAAAABAP8A/gD+//4BAgAG/wAC+v32AgAABv//Af7//gEBAPj/+QEB/wEB/v/+AQf/AwH9//cAAQEE/wAB////AAMBAP//AP8B/v7/AwD8/QX8+/4EA/0BAgMAAv7+Av3//gADAQL+AAIB//0A/QH//wAA/wH//gADA/0BA//8+wT+/AEEA/0BAgH+/gL6/voCAv4CAgT+AwIC//v/+gMD/AAE/f78AAMABAABAQL//gH9/v4CAQAB/v8DAv0AAv4A+//8AAACAf0CAwL+/wH6//sBAwAB//sC+v3/AwH+AgIG/QID/f33AwH/BP4BA//9AAMB/vkA/QIB/QED/f38AgIABf8FAQH/+AD8AQP+AwL+//sAAQEA/gEDBfwGBf/7+QP+/wQBBf78AwD8AAT//fkC/f8BAQP/AQABAQEA/wD/AAH/AAEAAP8AAAACAAIAAQAAAP4A/gD+AAIABQACAP0A/AAAAAIAAQD+AP8AAQABAAAA/v/9AgD+/wEAAf/9AAQB/f4B/gH+/v8DAP3/AgH/AQH///wA/wABAAAB/f/7AQH+BAIF//0B/AAA/wEBAP/8Av/+AAIB/QAD//38A/z+/wEAAP7+/wME/QMD/P73AfwABf8BAv7+/AH/AAH/AgID/v0B+wD//wAB/wD7//0BAQAD/wIC/f73APoCAP0ABPv8AAMC/f4C+gD+/gMDAvz/BAD9AAL+//wA/wD+Af///wEE/wAA/QL7/P8FBPsCBAP+Af/+A/r9AAIGAP/++QP7/gABAP/+Af7//gEDAAP//QH4//kBBP8DAQH//gEEAAH/+wH+/wABAv/+AgH9AAP+/fwD//4AAf///gEC/wMB/wD7//0CBP0CAvwA/f//AQEA/v7+BAD7/gX++/4EAv4EAAUCAPz5BP3+AQADAf///QACAf/+/QMA/gMAAQH8/foFAfwCAv4A/f7/AgP//QD8Af4AAf7/Av7//QAAAgD8/wQC/f8D/v38AwD9AgMD/gEB/gD7//4BAgABAPwA/f/+AP4BAAAD/wMB/v/5APwBBP8CAf7//QED/gQDAP34Avr//wEE/wIAAAAEAf//+gH//wL/AQP9/P4EAP3+Av7+/QL//v4CAP7/AgD//gD/AP8AAAAAAQD+/wIB/wAB///8Af7+/wMA/f0D/f3/AgT/Av/+A/n8+QQC/QAC//7+AgT+/wL7/vsDAv0CAv7+/QL//gACAP//AAAAAQEA/f8EAP3/AQACAPz/BP/9/QL/AAT+BAMC/vgA+QIC/QIC/wH6/QACAAD8/vwDA/0DAv7/+AH8/gICA///AAABBf8BAP0B/P8AAAMBAP79AwL9AwL+//oB/f4BAgH//gD+Av79/gEAAgL8/wX9/PwCAf8BAQD//gH///8B///+AQAAAP8AAgH9/wP+/v0BAP//AAABAP7+Av7+/gEAAAAAAP//Af8A/wAAAAIAAv/+Avz//gABAAEBAf0ABQD6/Ab++/8DAf/+AP8AAgEB/v4D/fz+BAH9AQIB//4A/gD9AAAAAQH//v0D//z/BAD+AAACAQD+/QL+//8BAv//Af7+/gMA/f8DAP0BAgIAAP/9Af7/AAABAf///QEA//8BAP/+AP8BAP//AQD//wEA//8AAAD/AAAAAAEA//8A/wD/AAAAAwIC/f4C+//9AAICAv7+Af7/AAAAAf///gH///8AAQACAAAA/gD/AAEAAAD/AAD/AAIC/v4C/v7+AQEA/wD///8CAv0AA////f7/BAH8/wP//v8BAf//Av7+/QIA/gAAAQIA/f4E/v39AQD//wL//v8CAf////0C////AAAB//7+AQAB//7+A//8/wMA//8AAAABAAEBAP79Av7+/wEBAf/+/gEBAQH9/wT/+/4FAPz/A//+/gEA/wAA/wH+//4CAP3/Av///gEAAAH//wH///4BAAAA//4C//7/AQAAAP/+Af8A/wAAAAD//wEA//8BAAH//f4EAPz/A//+/wIA/v8CAP/+AP8AAAAAAf///gEA/v8CAP/+Af///gAAAAA=';
