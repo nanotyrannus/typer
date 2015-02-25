@@ -76,7 +76,7 @@ transition: all 0.25s;
 </body>
 <script>
     if(!localStorage.savedDict){
-        var xhr = new XMLttpRequest();
+        var xhr = new XMLHttpRequest();
         xhr.open('GET', 'pocket.txt');
         xhr.send();
         xhr.addEventListener("load", function(){
